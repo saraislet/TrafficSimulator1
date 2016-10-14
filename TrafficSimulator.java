@@ -76,13 +76,13 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 		int totalCars = cars.size();
 		for (int i = 0; i < totalCars; i++) {
 			Car carA = cars.get(i);
-			int minDistance = windowWidth;
+			double minDistance = windowWidth;
 			double appropriateVelocity = carA.getVelocity();
 			
 			// find the closest car
 			for (int j = 0; j < totalCars; j++) {
 				Car carB = cars.get(j);
-				int distance = carB.getXPosition() - carA.getXPosition();
+				double distance = carB.getXPosition() - carA.getXPosition();
 				if ( distance > 0 && distance < minDistance) {
 					minDistance = distance;
 					appropriateVelocity = carB.getVelocity();
