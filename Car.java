@@ -11,8 +11,9 @@ public class Car extends JPanel {
 	private double v = 1;
 	private double vmax = 8;
 	private double a = 0;
-	private int carWidth=30;
-	private int carHeight=18;
+	private int lane = 0;
+	private static int carWidth=30;
+	private static int carHeight=18;
 	private Color preferredColor = Color.RED;
 	private Color color = Color.RED;
 	private double preferredDistance = carWidth * 5;
@@ -66,7 +67,7 @@ public class Car extends JPanel {
 		super.paintComponent(g);
 		
 		g.setColor(color);
-		g.fillRect((int) x, 30, carWidth, carHeight);
+		g.fillRect((int) x, 30 + lane * (carHeight + 10), carWidth, carHeight);
 	}
 	
 	// methods to get or set the x position
@@ -105,7 +106,16 @@ public class Car extends JPanel {
 		preferredDistance = newPreferredDistance;
 	}
 	
-	// method to return the car's width and height
+	// methods to get or set the car's lane
+	public int getLane() {
+		return lane;
+	}
+	
+	public void setLane(int newLane) {
+		lane = newLane;
+	}
+	
+	// methods to return the car's width and height
 	public int getCarWidth() {
 		return carWidth;
 	}
