@@ -11,8 +11,8 @@ import javax.swing.Timer;
 
 public class TrafficSimulator extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private static int numCars = 10;
-	private static int numLanes = 4;
+	private static int numCars = 15;
+	private static int numLanes = 5;
 	public static final int windowWidth = 1000;
 	public static final int windowHeight = Math.max(200, 100 + 28*numLanes);
 	ArrayList<Lane> lanes = new ArrayList<Lane>();

@@ -47,7 +47,6 @@ public class Lane extends JPanel {
 		newCar.setColor(randomColor);
 		newCar.setLane(laneIndex);
 		newCar.setVelocity(1 + 3 * Math.abs(rand.nextFloat()));
-		newCar.setXPosition(findGap()); // To do: write a method to find an open spot.
 		cars.add(newCar);
 	}
 	
@@ -95,7 +94,7 @@ public class Lane extends JPanel {
 				position[i] = cars.get(i).getXPosition();
 			}
 			
-			this.sort(position);
+			this.quicksort(position, 0, numCars);
 			
 			// find largest gap from sorted array of length at least 2, and set xMin to the start of the gap
 			double maxGap = 0.0;
@@ -110,10 +109,35 @@ public class Lane extends JPanel {
 		}
 	}
 	
-	public double[] sort(double[] position)	{
+	public double[] quicksort(double[] A,int p, int r) {
 		// To do: write heapsort or quicksort algorithm
+		int q = 0;
+		if (p < r) {
+			q = partition(A, p, r);
+			A = quicksort(A, p, q-1);
+			A = quicksort(A, q+1, r);
+		}
 		
-		return position;
+		return A;		
+	}
+	
+	public int partition(double[] A, int p, int r) {
+		double x = A[r];
+		int i = p-1;
+		
+		for (int j = p; j < r; j++) {
+			if (A[j] <= x) {
+				i++;
+				double temp = A[i];
+				A[i] = A[j];
+				A[j] = temp;
+			}
+		}
+		double temp = A[i+1];
+		A[i+1] = A[r];
+		A[r] = temp;
+		
+		return i+1;				
 	}
 	
 	// methods to get the number of cars in this lane

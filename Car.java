@@ -9,7 +9,7 @@ public class Car extends JPanel {
 	// set initial conditions for the car, unless called by a method that overrides these default values
 	private double x = 0;
 	private double v = 1;
-	private double vmax = 8;
+	private double vMax = 8;
 	private double a = 0;
 	private int lane = 0;
 	private static int carWidth=30;
@@ -17,6 +17,7 @@ public class Car extends JPanel {
 	private Color preferredColor = Color.RED;
 	private Color color = Color.RED;
 	private double preferredDistance = carWidth * 5;
+	private double preferredVelocity = vMax;
 	private double minDistance = carWidth * 3;
 
 	public Car() {
@@ -49,7 +50,7 @@ public class Car extends JPanel {
 		}
 
 		// increment the velocity by the acceleration if the magnitude of the velocity is less than vmax
-		if (Math.abs(v) < vmax) {
+		if (Math.abs(v) < vMax) {
 			v = Math.max(0, v + a);
 			//			color = preferredColor;
 		} else {
@@ -126,16 +127,24 @@ public class Car extends JPanel {
 		color = colorChoice;
 	}
 
-	public void updateAcceleration(double distance, double velocity) {
+	public void updateAcceleration(double distance, double frontVelocity) {
 		if (distance < minDistance) {
 			a = 0.003 * (distance - preferredDistance);
+			preferredVelocity = frontVelocity;
 			color = Color.RED;
 		} else if (distance < preferredDistance) {
-			a = 0.001 * (distance - preferredDistance);
-			color = Color.ORANGE;
+			if (v > preferredVelocity) {
+				a = 0.001 * (distance - preferredDistance);
+				preferredVelocity = frontVelocity;
+				color = Color.ORANGE;
+			} else {
+				a = 0;
+				preferredVelocity = frontVelocity;
+				v = frontVelocity;
+			}
 		} else if (distance >= preferredDistance && color == Color.ORANGE) {
 			a = 0;
-			v = velocity;
+			v = preferredVelocity;
 			color = preferredColor;
 		} else if (v <= 0) {
 			a = 0.02;
