@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.Random;
 
 import javax.swing.JPanel;
 
@@ -11,7 +12,7 @@ public class Car extends JPanel {
 	private double v = 1;
 	private double vMax = 8;
 	private double a = 0;
-	private int lane = 0;
+	private int laneIndex = 0;
 	private static int carWidth=30;
 	private static int carHeight=18;
 	private Color preferredColor = Color.RED;
@@ -19,26 +20,30 @@ public class Car extends JPanel {
 	private double preferredDistance = carWidth * 5;
 	private double preferredVelocity = vMax;
 	private double minDistance = carWidth * 3;
+	private Lane myLane;
+	private TrafficSimulator mySim;
+	private Random rand = new Random();
 
-	public Car() {
+	public boolean flagLaneChange = false;
+	public int newLaneIndex;
 
-	}
 
 	// generate a car at a given x coordinate
-	public Car(double xPosition) {
+	public Car(TrafficSimulator sim, Lane lane, double xPosition) {
 		x = xPosition;
+		myLane = lane;
+		mySim = sim;
 	}
 
 	// generate a car with a given x coordinate and velocity
-	public Car(double xPosition, double velocity) {
-		x = xPosition;
+	public Car(TrafficSimulator sim, Lane lane, double xPosition, double velocity) {
+		this(sim, lane, xPosition);
 		v = velocity;
 	}
 
 	// generate a car with a given x coordinate, velocity, and acceleration
-	public Car(double xPosition, double velocity, double acceleration) {
-		x = xPosition;
-		v = velocity;
+	public Car(TrafficSimulator sim, Lane lane, double xPosition, double velocity, double acceleration) {
+		this(sim, lane, xPosition, velocity);
 		a = acceleration;
 	}
 
@@ -49,22 +54,46 @@ public class Car extends JPanel {
 			x=0;
 		}
 
-		// increment the velocity by the acceleration if the magnitude of the velocity is less than vmax
-		if (Math.abs(v) < vMax) {
+		// increment the velocity by the acceleration if the magnitude of the velocity is less than vmax and preferredVelocity
+		// but always allow deceleration
+		if (a >= 0 && Math.abs(v) < vMax && Math.abs(v) < preferredVelocity) {
 			v = Math.max(0, v + a);
-			//			color = preferredColor;
-		} else {
-			color = Color.BLUE;
+		} else if (a < 0) {
+			v = v + a;
 		}
 
-		x = x + (int) v;
+		x = x + v;
+		
+		// check if lane changes are allowed and the random gaussian passes the test
+		double laneChangeChance = rand.nextGaussian();
+		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) > 3.5) {
+			// allow laneIndex increases if there is a higher lane index, then check that lane for an open spot
+			if (laneChangeChance > 0 && TrafficSimulator.numLanes > laneIndex + 1) {
+				if (TrafficSimulator.lanes.get(laneIndex + 1).checkLane(x - preferredDistance, x + preferredDistance) == true) {
+//					myLane.changeLane(this, laneIndex + 1, 1);
+					System.out.println("Car in lane " + laneIndex + " changed to lane " + (laneIndex + 1));
+					myLane.flagLaneChange(this, laneIndex + 1);
+					flagLaneChange = true;
+					newLaneIndex = laneIndex + 1;
+				}
+				// allow laneIndex decreases if there is a lower lane index, then check that lane for an open spot
+			} else if (laneChangeChance < 0 && laneIndex > 0) {
+				if (TrafficSimulator.lanes.get(laneIndex - 1).checkLane(x - preferredDistance, x + preferredDistance) == true) {
+//					myLane.changeLane(this, laneIndex - 1, -1);
+					System.out.println("Car in lane " + laneIndex + " changed to lane " + (laneIndex - 1));
+					myLane.flagLaneChange(this, laneIndex - 1);
+					flagLaneChange = true;
+					newLaneIndex = laneIndex - 1;
+				}
+			}
+		}
 	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
 		g.setColor(color);
-		g.fillRect((int) x, 30 + lane * (carHeight + 10), carWidth, carHeight);
+		g.fillRect((int) x, 30 + laneIndex * (carHeight + 10), carWidth, carHeight);
 	}
 
 	// methods to get or set the x position
@@ -103,15 +132,28 @@ public class Car extends JPanel {
 		preferredDistance = newPreferredDistance;
 	}
 
+	// methods to get or set the car's lane index
+	public int getLaneIndex() {
+		return laneIndex;
+	}
+
+	public void setLaneIndex(int newLaneIndex) {
+		laneIndex = newLaneIndex;
+	}
+	
 	// methods to get or set the car's lane
-	public int getLane() {
-		return lane;
+	public Lane getLane() {
+		return myLane;
 	}
 
-	public void setLane(int newLane) {
-		lane = newLane;
+	public void setLane(Lane newLane) {
+		myLane = newLane;
 	}
-
+	
+	public void setSim(TrafficSimulator newSim) {
+		mySim = newSim;
+	}
+	
 	// methods to return the car's width and height
 	public int getCarWidth() {
 		return carWidth;
@@ -133,14 +175,15 @@ public class Car extends JPanel {
 			preferredVelocity = frontVelocity;
 			color = Color.RED;
 		} else if (distance < preferredDistance) {
-			if (v > preferredVelocity) {
-				a = 0.001 * (distance - preferredDistance);
+			if (v > frontVelocity) {
+				a = 0.002 * (distance - preferredDistance);
 				preferredVelocity = frontVelocity;
 				color = Color.ORANGE;
 			} else {
 				a = 0;
 				preferredVelocity = frontVelocity;
 				v = frontVelocity;
+				color = Color.CYAN;
 			}
 		} else if (distance >= preferredDistance && color == Color.ORANGE) {
 			a = 0;

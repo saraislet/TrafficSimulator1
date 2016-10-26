@@ -1,39 +1,73 @@
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class TrafficSimulator extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private static int numCars = 15;
-	private static int numLanes = 5;
+	
+	public static int numCars = 24;
+	public static int numLanes = 8;
+	public static boolean allowLaneChanges = true;
+	public static ArrayList<Lane> lanes = new ArrayList<Lane>();
 	public static final int windowWidth = 1000;
-	public static final int windowHeight = Math.max(200, 100 + 28*numLanes);
-	ArrayList<Lane> lanes = new ArrayList<Lane>();
+	public static final int windowHeight = Math.max(200, 200 + 28*numLanes);
+	public static final int carHeight = 18;
+
+	public static boolean paused = false;
+	public static JButton pauseButton;
+	
 	private Timer t = new Timer(15, (ActionListener) this);
 	private Random rand = new Random();
 
-
 	public static void main(String[] args) {
 		TrafficSimulator sim = new TrafficSimulator(numCars, numLanes);
-		JFrame f = new JFrame();
-		f.add(sim);
-		f.setVisible(true);
-		f.setSize(windowWidth, windowHeight);
-		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setTitle("Traffic Simulator");
-		f.setBackground(Color.LIGHT_GRAY);
+		
+		JFrame frame = new JFrame();
+		frame.add(sim);
+		frame.setVisible(true);
+		frame.setSize(windowWidth, windowHeight);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setTitle("Traffic Simulator");
+//		frame.setBackground(Color.LIGHT_GRAY);
+		
+		
+		JPanel mainPanel = new JPanel();
+		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+//		mainPanel.setBackground(Color.cyan);
+		frame.add(mainPanel);
+				
+		JPanel lanePanel = new JPanel();
+		JPanel buttonPanel = new JPanel();
+//		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+		frame.add(sim);
+		mainPanel.add(lanePanel);
+		mainPanel.add(buttonPanel);
+//		lanePanel.setBackground(Color.LIGHT_GRAY);
+		lanePanel.setOpaque(false);
+		lanePanel.setMinimumSize(new Dimension(windowWidth, windowHeight-100));
+//		buttonPanel.setOpaque(false);
+//		mainPanel.setOpaque(false);
+		buttonPanel.setBackground(Color.red);
+		
+		pauseButton = new JButton("Pause");
+		mainPanel.add(pauseButton);
+		ButtonListener pauseButtonListener = sim.new ButtonListener();
+		pauseButton.addActionListener(pauseButtonListener);
 	}
 
-	public TrafficSimulator() {
-		lanes.add(new Lane());
-	}
+//	public TrafficSimulator() {
+//		lanes.add(new Lane());
+//	}
 
 	public TrafficSimulator(int numCars, int numLanes) {
 		int[] carsPerLane = new int[numLanes];
@@ -45,22 +79,24 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 		for (int i = 0; i < numLanes; i++) {
 			Lane newLane = new Lane(carsPerLane[i]);
 			newLane.setIndex(i);
+			newLane.setSim(this);
 			lanes.add(newLane);
 		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		this.update();
-		this.repaint();
+		if (paused == false) {
+			this.update();
+			this.repaint();
+		}
 	}
 
 	// paint cars to the screen
 	public void paintComponent(Graphics graphics) {
 		graphics.setColor(Color.LIGHT_GRAY);
-		graphics.fillRect(0, 0, windowWidth, windowHeight);
+		graphics.fillRect(0, 0, windowWidth, windowHeight-150);
 
 		// draw the lanes using the car height
-		int carHeight = lanes.get(0).getCar(0).getCarHeight();
 		graphics.setColor(Color.DARK_GRAY);
 		graphics.fillRect(0, 25, windowWidth, carHeight + 10);
 		for ( int i = 1; i < numLanes; i++) {		
@@ -83,6 +119,23 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 		for (Lane myLane : lanes) {
 			myLane.update();
 		}
+	}
+	
+	public class ButtonListener implements ActionListener{
+		public void actionPerformed(ActionEvent evt) {
+			Object actionSource = evt.getSource(); // Label of the button clicked in evt
+			if (actionSource == pauseButton && paused == false) {
+				System.out.println("Pause button pressed: pause");
+				paused = true;
+			} else if (actionSource == pauseButton && paused == true) {
+				System.out.println("Pause button pressed: resume");
+				paused = false;
+			}
+		}
+	}
+	
+	public Lane getLane(int i) {
+		return lanes.get(i);
 	}
 
 }
