@@ -45,15 +45,17 @@ public class Lane extends JPanel {
 		car.setFlagLaneChanged(direction);
 		System.out.println(" Lane " + laneIndex + " has " + (numCars + 1 )+ " cars after a car changes to this lane.");
 		
-		int maxIndex;
-		int minIndex;
+		int maxIndex = 0;
+		int minIndex = 0;
 		
-		if (cars.get(0).getXPosition() > cars.get(numCars - 1).getXPosition()) {
-			maxIndex = findMaxIndex(0, numCars - 1);
-			minIndex = maxIndex + 1;
-		} else {
-			maxIndex = numCars - 1;
-			minIndex = 0;
+		if (numCars != 0) {
+			if (cars.get(0).getXPosition() > cars.get(numCars - 1).getXPosition()) {
+				maxIndex = findMaxIndex(0, numCars - 1);
+				minIndex = maxIndex + 1;
+			} else {
+				maxIndex = numCars - 1;
+				minIndex = 0;
+			}
 		}
 		
 		if (numCars == 0) {
