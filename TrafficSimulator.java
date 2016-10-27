@@ -65,10 +65,6 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 		pauseButton.addActionListener(pauseButtonListener);
 	}
 
-//	public TrafficSimulator() {
-//		lanes.add(new Lane());
-//	}
-
 	public TrafficSimulator(int numCars, int numLanes) {
 		int[] carsPerLane = new int[numLanes];
 		
@@ -79,7 +75,6 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 		for (int i = 0; i < numLanes; i++) {
 			Lane newLane = new Lane(carsPerLane[i]);
 			newLane.setIndex(i);
-			newLane.setSim(this);
 			lanes.add(newLane);
 		}
 	}

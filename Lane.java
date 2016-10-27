@@ -14,7 +14,6 @@ public class Lane extends JPanel {
 	private int numCars;
 	private int laneIndex = 0;
 	private Random rand = new Random();
-	private static TrafficSimulator sim;
 	private int flaggedCarIndex;
 	private int newLaneIndex;
 	public boolean flagLaneChange = false;
@@ -29,7 +28,7 @@ public class Lane extends JPanel {
 			Color randomColor = new Color(r, g, b);
 			double xPosition = windowWidth * i /numCars;
 			double velocity = 1 + 3 * Math.abs(rand.nextFloat());
-			Car newCar = new Car(sim, this, xPosition, velocity);
+			Car newCar = new Car(this, xPosition, velocity);
 			newCar.setColor(randomColor);
 			newCar.setLaneIndex(laneIndex);
 			cars.add(newCar);
@@ -38,23 +37,52 @@ public class Lane extends JPanel {
 	
 	// method to generate a car in the lane
 	public void addCar(Car newCar, int direction) {
+		numCars = cars.size();
 		Car car = newCar;
 		double x = car.getXPosition();
 		car.setLaneIndex(laneIndex);
 		car.setLane(this);
+		car.setFlagLaneChanged(direction);
 		System.out.println(" Lane " + laneIndex + " has " + (numCars + 1 )+ " cars after a car changes to this lane.");
+		
+		int maxIndex;
+		int minIndex;
+		
+		if (cars.get(0).getXPosition() > cars.get(numCars - 1).getXPosition()) {
+			maxIndex = findMaxIndex(0, numCars - 1);
+			minIndex = maxIndex + 1;
+		} else {
+			maxIndex = numCars - 1;
+			minIndex = 0;
+		}
 		
 		if (numCars == 0) {
 			cars.add(car);
-		} else if (x < cars.get(0).getXPosition()) {
-			cars.add(0, car);
+		} else if (x > cars.get(maxIndex).getXPosition()) {
+			cars.add(maxIndex + 1, car);
+		} else if (x < cars.get(minIndex).getXPosition()) {
+			cars.add(minIndex, car);
+		} else if (x > cars.get(0).getXPosition()) {
+			int newIndex = insert(x, 0, maxIndex);
+			cars.add(newIndex, car);
 		} else if (x > cars.get(numCars - 1).getXPosition()) {
-			cars.add(car);
+			cars.add(numCars, car);
 		} else {
-			int newIndex = insert(x, 0, numCars - 1);
+			int newIndex = insert(x, minIndex, numCars - 1);
 			cars.add(newIndex, car);
 		}
-		numCars = cars.size();
+		
+//		if (numCars == 0) {
+//			cars.add(car);
+//		} else if (x < cars.get(0).getXPosition()) {
+//			cars.add(0, car);
+//		} else if (x > cars.get(numCars - 1).getXPosition()) {
+//			cars.add(car);
+//		} else {
+//			int newIndex = insert(x, 0, numCars - 1);
+//			cars.add(newIndex, car);
+//		}
+		numCars++;
 	}
 	
 	public void paintComponent(Graphics graphics) {
@@ -107,10 +135,10 @@ public class Lane extends JPanel {
 		cars.remove(carIndex);
 		numCars = cars.size();
 		System.out.print("Lane " + laneIndex + " has " + numCars + " cars after one left.");
-		TrafficSimulator.lanes.get(newLaneIndex).addCar(car, newLaneIndex - laneIndex);
+		TrafficSimulator.lanes.get(newLaneIndex).addCar(car, laneIndex - newLaneIndex);
 	}
 	
-	// method to return the index for inserting a car
+	// returns the index for inserting a car
 	public int insert(double x, int start, int end) {
 		int size = end - start;
 		if (size == 0) {
@@ -127,6 +155,22 @@ public class Lane extends JPanel {
 				return insert(x, start, pivot);
 			} else {
 				return insert(x, pivot, end);
+			}
+		}
+	}
+	
+	// returns the index for the car with the maximum x position in the list
+	public int findMaxIndex(int start, int end) {
+		int pivot = (int) ((end + start) / 2);
+		if (end - start == 0) {
+			return start;
+		} else if (end - start == 1) {
+			return start;
+		} else {
+			if (cars.get(0).getXPosition() > cars.get(pivot).getXPosition()) {
+				return findMaxIndex(start, pivot);
+			} else {
+				return findMaxIndex(pivot, end);
 			}
 		}
 	}
@@ -206,9 +250,5 @@ public class Lane extends JPanel {
 	// methods to get a Car from this lane
 	public Car getCar(int i) {
 		return cars.get(i);
-	}
-	
-	public void setSim(TrafficSimulator newSim) {
-		sim = newSim;
 	}
 }

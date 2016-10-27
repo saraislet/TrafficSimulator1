@@ -13,6 +13,7 @@ public class Car extends JPanel {
 	private double vMax = 8;
 	private double a = 0;
 	private int laneIndex = 0;
+	private int laneOffset = 0;
 	private static int carWidth=30;
 	private static int carHeight=18;
 	private Color preferredColor = Color.RED;
@@ -21,29 +22,28 @@ public class Car extends JPanel {
 	private double preferredVelocity = vMax;
 	private double minDistance = carWidth * 3;
 	private Lane myLane;
-	private TrafficSimulator mySim;
 	private Random rand = new Random();
 
 	public boolean flagLaneChange = false;
+	public int flagLaneChanged = 0;
 	public int newLaneIndex;
 
 
 	// generate a car at a given x coordinate
-	public Car(TrafficSimulator sim, Lane lane, double xPosition) {
+	public Car(Lane lane, double xPosition) {
 		x = xPosition;
 		myLane = lane;
-		mySim = sim;
 	}
 
 	// generate a car with a given x coordinate and velocity
-	public Car(TrafficSimulator sim, Lane lane, double xPosition, double velocity) {
-		this(sim, lane, xPosition);
+	public Car(Lane lane, double xPosition, double velocity) {
+		this(lane, xPosition);
 		v = velocity;
 	}
 
 	// generate a car with a given x coordinate, velocity, and acceleration
-	public Car(TrafficSimulator sim, Lane lane, double xPosition, double velocity, double acceleration) {
-		this(sim, lane, xPosition, velocity);
+	public Car(Lane lane, double xPosition, double velocity, double acceleration) {
+		this(lane, xPosition, velocity);
 		a = acceleration;
 	}
 
@@ -87,13 +87,24 @@ public class Car extends JPanel {
 				}
 			}
 		}
+		
+		// if lane was changed, handle updating the y-coordinate to smoothly transition between lanes
+		if (flagLaneChanged != 0) {
+			laneOffset = flagLaneChanged * (10 + carHeight);
+			flagLaneChanged = 0;
+		}
+		if (laneOffset > 0) {
+			laneOffset--;
+		} else if (laneOffset < 0) {
+			laneOffset++;
+		}
 	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
 		g.setColor(color);
-		g.fillRect((int) x, 30 + laneIndex * (carHeight + 10), carWidth, carHeight);
+		g.fillRect((int) x, 30 + laneOffset + laneIndex * (carHeight + 10), carWidth, carHeight);
 	}
 
 	// methods to get or set the x position
@@ -150,10 +161,6 @@ public class Car extends JPanel {
 		myLane = newLane;
 	}
 	
-	public void setSim(TrafficSimulator newSim) {
-		mySim = newSim;
-	}
-	
 	// methods to return the car's width and height
 	public int getCarWidth() {
 		return carWidth;
@@ -161,6 +168,11 @@ public class Car extends JPanel {
 
 	public int getCarHeight() {
 		return carHeight;
+	}
+	
+	// method to flag that a car changed lanes
+	public void setFlagLaneChanged(int direction) {
+		flagLaneChanged = direction;
 	}
 
 	// method to set the car's color
