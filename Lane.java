@@ -22,15 +22,22 @@ public class Lane extends JPanel {
 		numCars = k;
 		for (int i = 0; i < numCars; i++) {
 			// generate random color, a random lane, generate a car, then set the color and lane
-			float r = rand.nextFloat();
+			float r = 0; 	// only aggressive cars will include a red hue
 			float g = rand.nextFloat();
 			float b = rand.nextFloat();
 			Color randomColor = new Color(r, g, b);
 			double xPosition = windowWidth * i /numCars;
-			double velocity = 1 + 3 * Math.abs(rand.nextFloat());
+			double velocity = 1 + 2 * Math.abs(rand.nextFloat());
 			Car newCar = new Car(this, xPosition, velocity);
 			newCar.setColor(randomColor);
 			newCar.setLaneIndex(laneIndex);
+			
+			// roll to determine if car will be aggressive, then generate and set aggressionLevel
+			float aggressionRoll = rand.nextFloat();
+			if (aggressionRoll > TrafficSimulator.aggressionChance) {
+				double aggressionLevel = 3 * rand.nextDouble();
+				newCar.setAggressionLevel(aggressionLevel);
+			}
 			cars.add(newCar);
 		}
 	}

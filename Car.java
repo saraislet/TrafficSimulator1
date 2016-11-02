@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 import javax.swing.JPanel;
@@ -10,7 +11,7 @@ public class Car extends JPanel {
 	// set initial conditions for the car, unless called by a method that overrides these default values
 	private double x = 0;
 	private double v = 1;
-	private double vMax = 8;
+	private double vMax = 6;
 	private double a = 0;
 	private int laneIndex = 0;
 	private int laneOffset = 0;
@@ -18,9 +19,11 @@ public class Car extends JPanel {
 	private static int carHeight=18;
 	private Color preferredColor = Color.RED;
 	private Color color = Color.RED;
+	private double aggressionLevel = 0;
 	private double preferredDistance = carWidth * 5;
 	private double preferredVelocity = vMax;
 	private double minDistance = carWidth * 3;
+	private double changeLaneDistance = preferredDistance;
 	private Lane myLane;
 	private Random rand = new Random();
 
@@ -69,7 +72,7 @@ public class Car extends JPanel {
 		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) > 3.5) {
 			// allow laneIndex increases if there is a higher lane index, then check that lane for an open spot
 			if (laneChangeChance > 0 && TrafficSimulator.numLanes > laneIndex + 1) {
-				if (TrafficSimulator.lanes.get(laneIndex + 1).checkLane(x - preferredDistance, x + preferredDistance) == true) {
+				if (TrafficSimulator.lanes.get(laneIndex + 1).checkLane(x - changeLaneDistance, x + changeLaneDistance) == true) {
 //					myLane.changeLane(this, laneIndex + 1, 1);
 					System.out.println("Car in lane " + laneIndex + " changed to lane " + (laneIndex + 1));
 					myLane.flagLaneChange(this, laneIndex + 1);
@@ -78,7 +81,7 @@ public class Car extends JPanel {
 				}
 				// allow laneIndex decreases if there is a lower lane index, then check that lane for an open spot
 			} else if (laneChangeChance < 0 && laneIndex > 0) {
-				if (TrafficSimulator.lanes.get(laneIndex - 1).checkLane(x - preferredDistance, x + preferredDistance) == true) {
+				if (TrafficSimulator.lanes.get(laneIndex - 1).checkLane(x - changeLaneDistance, x + changeLaneDistance) == true) {
 //					myLane.changeLane(this, laneIndex - 1, -1);
 					System.out.println("Car in lane " + laneIndex + " changed to lane " + (laneIndex - 1));
 					myLane.flagLaneChange(this, laneIndex - 1);
@@ -99,12 +102,66 @@ public class Car extends JPanel {
 			laneOffset++;
 		}
 	}
+	
+	public void updateAcceleration(double distance, double frontVelocity) {
+		if (distance < minDistance) {
+			a = 0.005 * (distance - preferredDistance);
+			preferredVelocity = frontVelocity;
+			color = Color.RED;
+		} else if (distance < preferredDistance) {
+			if (v > frontVelocity) {
+				a = 0.001 * (distance - preferredDistance);
+				preferredVelocity = frontVelocity;
+				color = Color.ORANGE;
+			} else {
+				a = 0;
+				preferredVelocity = frontVelocity;
+				v = frontVelocity;
+				color = Color.CYAN;
+			}
+		} else if (distance >= preferredDistance && color == Color.ORANGE) {
+			a = 0;
+			v = preferredVelocity;
+			color = preferredColor;
+		} else if (v <= 0) {
+			a = 0.02;
+			color = Color.PINK;
+		}
+	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
 		g.setColor(color);
 		g.fillRect((int) x, 30 + laneOffset + laneIndex * (carHeight + 10), carWidth, carHeight);
+	}
+	
+	// methods to get or set the car's aggression level
+	public double getAggressionLevel() {
+		return aggressionLevel;
+	}
+
+	// only allow values between 0-3
+	public void setAggressionLevel(double newAggressionLevel) {
+		if (newAggressionLevel > 3) {
+			newAggressionLevel = 3;
+		} else if (newAggressionLevel < 0) {
+			newAggressionLevel = 0;
+		}
+			aggressionLevel = newAggressionLevel;
+			minDistance = carWidth * (3 - aggressionLevel / 3);
+			preferredDistance = carWidth * (5 - aggressionLevel * 2/3);
+			changeLaneDistance = preferredDistance;
+			v = 1.5 * v;
+			a = 0.01;
+			
+			float red = (float) aggressionLevel / 3; // car will be a shade of red
+//			float green = preferredColor.getGreen() / 255;
+//			float blue = preferredColor.getBlue() / 255;
+			preferredColor = new Color(red, 0, 0);
+			color = preferredColor;
+			DecimalFormat twoPlaces = new DecimalFormat("0.00");
+			System.out.println("Car has aggression level " + twoPlaces.format(aggressionLevel) + ".");
 	}
 
 	// methods to get or set the x position
@@ -180,31 +237,4 @@ public class Car extends JPanel {
 		preferredColor = colorChoice;
 		color = colorChoice;
 	}
-
-	public void updateAcceleration(double distance, double frontVelocity) {
-		if (distance < minDistance) {
-			a = 0.003 * (distance - preferredDistance);
-			preferredVelocity = frontVelocity;
-			color = Color.RED;
-		} else if (distance < preferredDistance) {
-			if (v > frontVelocity) {
-				a = 0.002 * (distance - preferredDistance);
-				preferredVelocity = frontVelocity;
-				color = Color.ORANGE;
-			} else {
-				a = 0;
-				preferredVelocity = frontVelocity;
-				v = frontVelocity;
-				color = Color.CYAN;
-			}
-		} else if (distance >= preferredDistance && color == Color.ORANGE) {
-			a = 0;
-			v = preferredVelocity;
-			color = preferredColor;
-		} else if (v <= 0) {
-			a = 0.02;
-			color = Color.PINK;
-		}
-	}
-
 }
