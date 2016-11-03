@@ -27,7 +27,7 @@ public class Lane extends JPanel {
 			float b = rand.nextFloat();
 			Color randomColor = new Color(r, g, b);
 			double xPosition = windowWidth * i /numCars;
-			double velocity = 1 + 2 * Math.abs(rand.nextFloat());
+			double velocity = 2 + 0.5 * Math.abs(rand.nextGaussian());
 			Car newCar = new Car(this, xPosition, velocity);
 			newCar.setColor(randomColor);
 			newCar.setLaneIndex(laneIndex);

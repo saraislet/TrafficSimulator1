@@ -11,7 +11,7 @@ public class Car extends JPanel {
 	// set initial conditions for the car, unless called by a method that overrides these default values
 	private double x = 0;
 	private double v = 1;
-	private double vMax = 6;
+	private double vMax = 5;
 	private double a = 0;
 	private int laneIndex = 0;
 	private int laneOffset = 0;
@@ -21,9 +21,10 @@ public class Car extends JPanel {
 	private Color color = Color.RED;
 	private double aggressionLevel = 0;
 	private double preferredDistance = carWidth * 5;
-	private double preferredVelocity = vMax;
+	private double preferredVelocity = 4;
 	private double minDistance = carWidth * 3;
 	private double changeLaneDistance = preferredDistance;
+	private double laneChangeChanceOffset = 0;
 	private Lane myLane;
 	private Random rand = new Random();
 
@@ -57,6 +58,11 @@ public class Car extends JPanel {
 			x=0;
 		}
 
+		// don't allow velocities over vMax, nor over preferredVelocity
+		if (v > vMax || v > preferredVelocity) {
+			v = Math.min(vMax, preferredVelocity);
+		}
+		
 		// increment the velocity by the acceleration if the magnitude of the velocity is less than vmax and preferredVelocity
 		// but always allow deceleration
 		if (a >= 0 && Math.abs(v) < vMax && Math.abs(v) < preferredVelocity) {
@@ -68,8 +74,8 @@ public class Car extends JPanel {
 		x = x + v;
 		
 		// check if lane changes are allowed and the random gaussian passes the test
-		double laneChangeChance = rand.nextGaussian();
-		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) > 3.5) {
+		double laneChangeChance = 1 - 2 * rand.nextFloat();
+		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) + laneChangeChanceOffset > 0.999) {
 			// allow laneIndex increases if there is a higher lane index, then check that lane for an open spot
 			if (laneChangeChance > 0 && TrafficSimulator.numLanes > laneIndex + 1) {
 				if (TrafficSimulator.lanes.get(laneIndex + 1).checkLane(x - changeLaneDistance, x + changeLaneDistance) == true) {
@@ -104,28 +110,36 @@ public class Car extends JPanel {
 	}
 	
 	public void updateAcceleration(double distance, double frontVelocity) {
+		laneChangeChanceOffset = aggressionLevel / 2000;
 		if (distance < minDistance) {
 			a = 0.005 * (distance - preferredDistance);
-			preferredVelocity = frontVelocity;
+//			preferredVelocity = frontVelocity;
 			color = Color.RED;
+			laneChangeChanceOffset += 0.0005;
 		} else if (distance < preferredDistance) {
 			if (v > frontVelocity) {
-				a = 0.001 * (distance - preferredDistance);
-				preferredVelocity = frontVelocity;
+				a = 0.0015 * (distance - preferredDistance);
+//				preferredVelocity = frontVelocity;
 				color = Color.ORANGE;
+//				laneChangeChanceOffset += 0.0002;
 			} else {
 				a = 0;
-				preferredVelocity = frontVelocity;
+//				preferredVelocity = frontVelocity;
 				v = frontVelocity;
 				color = Color.CYAN;
+				laneChangeChanceOffset += 0.0001;
 			}
-		} else if (distance >= preferredDistance && color == Color.ORANGE) {
-			a = 0;
-			v = preferredVelocity;
+		} else if (distance >= preferredDistance && color != preferredColor) {
+			a = 0.003;
 			color = preferredColor;
 		} else if (v <= 0) {
 			a = 0.02;
 			color = Color.PINK;
+		}
+		
+		// if velocity is below 80% of preferredVelocity, increase lane change chance
+		if (v < 0.8 * preferredVelocity) {
+//			laneChangeChanceOffset += .0001;
 		}
 	}
 
@@ -143,16 +157,17 @@ public class Car extends JPanel {
 
 	// only allow values between 0-3
 	public void setAggressionLevel(double newAggressionLevel) {
-		if (newAggressionLevel > 3) {
-			newAggressionLevel = 3;
+		if (newAggressionLevel > 2) {
+			newAggressionLevel = 2;
 		} else if (newAggressionLevel < 0) {
 			newAggressionLevel = 0;
 		}
 			aggressionLevel = newAggressionLevel;
 			minDistance = carWidth * (3 - aggressionLevel / 3);
 			preferredDistance = carWidth * (5 - aggressionLevel * 2/3);
+			preferredVelocity = preferredVelocity + aggressionLevel * 2/3;
 			changeLaneDistance = preferredDistance;
-			v = 1.5 * v;
+			v = 1.2 * v;
 			a = 0.01;
 			
 			float red = (float) aggressionLevel / 3; // car will be a shade of red
