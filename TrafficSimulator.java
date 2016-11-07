@@ -18,6 +18,7 @@ public class TrafficSimulator extends JPanel implements ActionListener {
 	public static int numCars = 24;
 	public static int numLanes = 8;
 	public static boolean allowLaneChanges = true;
+	public static double laneChangeChange = 0.999;
 	public static double aggressionChance = 0.90;
 	public static ArrayList<Lane> lanes = new ArrayList<Lane>();
 	public static final int windowWidth = 1000;

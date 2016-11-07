@@ -14,17 +14,20 @@ public class Car extends JPanel {
 	private double vMax = 5;
 	private double a = 0;
 	private int laneIndex = 0;
-	private int laneOffset = 0;
+	private double laneOffset = 0;
 	private static int carWidth=30;
 	private static int carHeight=18;
 	private Color preferredColor = Color.RED;
 	private Color color = Color.RED;
 	private double aggressionLevel = 0;
 	private double preferredDistance = carWidth * 5;
-	private double preferredVelocity = 4;
+	private double preferredVelocity = 3.5;
 	private double minDistance = carWidth * 3;
 	private double changeLaneDistance = preferredDistance;
 	private double laneChangeChanceOffset = 0;
+	private double laneChangeMultiplier = 1;
+	private long timeToChangeLane = 3000; // this is how long the lane change should take in milliseconds
+	private long timeOfLaneChange;
 	private Lane myLane;
 	private Random rand = new Random();
 
@@ -55,7 +58,7 @@ public class Car extends JPanel {
 	public void update(int windowWidth) {
 		// move back to start if right edge of car passes the right edge of the frame
 		if (x > windowWidth - carWidth) {
-			x=0;
+			x=-carWidth;
 		}
 
 		// don't allow velocities over vMax, nor over preferredVelocity
@@ -75,7 +78,7 @@ public class Car extends JPanel {
 		
 		// check if lane changes are allowed and the random gaussian passes the test
 		double laneChangeChance = 1 - 2 * rand.nextFloat();
-		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) + laneChangeChanceOffset > 0.999) {
+		if (TrafficSimulator.allowLaneChanges == true && myLane.flagLaneChange == false && Math.abs(laneChangeChance) + laneChangeChanceOffset > TrafficSimulator.laneChangeChange) {
 			// allow laneIndex increases if there is a higher lane index, then check that lane for an open spot
 			if (laneChangeChance > 0 && TrafficSimulator.numLanes > laneIndex + 1) {
 				if (TrafficSimulator.lanes.get(laneIndex + 1).checkLane(x - changeLaneDistance, x + changeLaneDistance) == true) {
@@ -101,25 +104,31 @@ public class Car extends JPanel {
 		if (flagLaneChanged != 0) {
 			laneOffset = flagLaneChanged * (10 + carHeight);
 			flagLaneChanged = 0;
+			timeOfLaneChange = System.currentTimeMillis();
 		}
-		if (laneOffset > 0) {
-			laneOffset--;
-		} else if (laneOffset < 0) {
-			laneOffset++;
+		if (laneOffset != 0) {
+//			laneOffset--;
+			long timeSinceLaneChange = System.currentTimeMillis() - timeOfLaneChange;
+			laneChangeMultiplier = 1 - easeInOutCubic( (double) timeSinceLaneChange / timeToChangeLane );
+			laneOffset = laneOffset * laneChangeMultiplier;
+			if (Math.abs(laneOffset) < 0.5) {
+				laneOffset = 0;
+			}
+//		 	System.out.println("Lane offset: " + (int) laneOffset + "; laneChangeMultiplier: " + laneChangeMultiplier + "; timeSinceLaneChange: " + timeSinceLaneChange);
+//			System.out.println("timeSinceLaneChange / timeToChangeLane: " + (double) timeSinceLaneChange / timeToChangeLane);
+//			System.out.println("easeInOutCubic( timeSinceLaneChange / timeToChangeLane ): " + easeInOutCubic( (double) timeSinceLaneChange / timeToChangeLane ));
 		}
 	}
 	
 	public void updateAcceleration(double distance, double frontVelocity) {
-		laneChangeChanceOffset = aggressionLevel / 2000;
+		laneChangeChanceOffset = aggressionLevel / 3000;
 		if (distance < minDistance) {
 			a = 0.005 * (distance - preferredDistance);
-//			preferredVelocity = frontVelocity;
 			color = Color.RED;
-			laneChangeChanceOffset += 0.0005;
+			laneChangeChanceOffset += 0.0002;
 		} else if (distance < preferredDistance) {
 			if (v > frontVelocity) {
 				a = 0.0015 * (distance - preferredDistance);
-//				preferredVelocity = frontVelocity;
 				color = Color.ORANGE;
 //				laneChangeChanceOffset += 0.0002;
 			} else {
@@ -127,10 +136,10 @@ public class Car extends JPanel {
 //				preferredVelocity = frontVelocity;
 				v = frontVelocity;
 				color = Color.CYAN;
-				laneChangeChanceOffset += 0.0001;
+				laneChangeChanceOffset += 0.00005;
 			}
 		} else if (distance >= preferredDistance && color != preferredColor) {
-			a = 0.003;
+			a = 0.005;
 			color = preferredColor;
 		} else if (v <= 0) {
 			a = 0.02;
@@ -147,7 +156,24 @@ public class Car extends JPanel {
 		super.paintComponent(g);
 
 		g.setColor(color);
-		g.fillRect((int) x, 30 + laneOffset + laneIndex * (carHeight + 10), carWidth, carHeight);
+		g.fillRect((int) x, 30 + ((int) laneOffset) + laneIndex * (carHeight + 10), carWidth, carHeight);
+	}
+	
+	// easing functions
+	public double easeInCubic(double t) {
+		return Math.pow(t, 3);
+	}
+	
+	public double easeOutCubic(double t) {
+		return 1 - easeInCubic(t);
+	}
+	
+	public double easeInOutCubic(double t) {
+		if (t < 0.5) {
+			return easeInCubic(t * 2.0) / 2.0;
+		} else {
+			return 1 - easeInCubic((1-t) * 2.0) / 2.0;
+		}
 	}
 	
 	// methods to get or set the car's aggression level
@@ -243,8 +269,16 @@ public class Car extends JPanel {
 	}
 	
 	// method to flag that a car changed lanes
+	// direction should be a nonzero value, oldLaneIndex - newLaneIndex
 	public void setFlagLaneChanged(int direction) {
 		flagLaneChanged = direction;
+		
+		// if lane was changed, handle updating the y-coordinate to smoothly transition between lanes
+		if (flagLaneChanged != 0) {
+			laneOffset = flagLaneChanged * (10 + carHeight);
+			flagLaneChanged = 0;
+			timeOfLaneChange = System.currentTimeMillis();
+		}
 	}
 
 	// method to set the car's color

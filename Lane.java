@@ -50,7 +50,7 @@ public class Lane extends JPanel {
 		car.setLaneIndex(laneIndex);
 		car.setLane(this);
 		car.setFlagLaneChanged(direction);
-		System.out.println(" Lane " + laneIndex + " has " + (numCars + 1 )+ " cars after a car changes to this lane.");
+//		System.out.println(" Lane " + laneIndex + " has " + (numCars + 1 )+ " cars after a car changes to this lane.");
 		
 		int maxIndex = 0;
 		int minIndex = 0;
@@ -143,7 +143,7 @@ public class Lane extends JPanel {
 		Car car = cars.get(carIndex);
 		cars.remove(carIndex);
 		numCars = cars.size();
-		System.out.print("Lane " + laneIndex + " has " + numCars + " cars after one left.");
+//		System.out.print("Lane " + laneIndex + " has " + numCars + " cars after one left.");
 		TrafficSimulator.lanes.get(newLaneIndex).addCar(car, laneIndex - newLaneIndex);
 	}
 	
