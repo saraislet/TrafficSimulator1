@@ -15,8 +15,13 @@ On update(), each car checks a random number to determine if it will try to chan
 
 ## Todo:
 -Add JUnit tests.
+
 -Cars and lanes should be drawn on a JPanel, and a separate JPanel should hold buttons and other input mechanisms. Currently, cars and lanes are drawn directly on the JFrame.
+
 -Click to select a car, pull the current velocity, acceleration, color, aggression level, lane number, and index in lane. Allow user to change the car's acceleration, color, and aggression level, or flag a lane change (to be completed when allowable by lane change checks). Potentially also allow changes to preferred velocity and preferred tailing distance.
+
 -Improve acceleration formulas when car is tailing too closely and moving too quickly.
+
 -Model different forms of driving behavior. Possibly replace aggression level with different modes of aggression (drivers with higher tendency to change lanes, tail closely, or accelerate quickly).
+
 -Model reaction times. Should cars change acceleration immediately if a slower car changes lanes in front of them?
